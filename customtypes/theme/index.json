@@ -1,0 +1,26 @@
+{
+  "id": "theme",
+  "label": "Theme",
+  "format": "custom",
+  "repeatable": false,
+  "status": true,
+  "json": {
+    "Main": {
+      "logo": {
+        "type": "Image",
+        "config": {
+          "label": "Logo",
+          "constraint": {},
+          "thumbnails": []
+        }
+      },
+      "main_color": {
+        "type": "Color",
+        "config": {
+          "label": "Main color",
+          "placeholder": ""
+        }
+      }
+    }
+  }
+}
