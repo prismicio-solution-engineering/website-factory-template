@@ -1,1 +1,103 @@
-{"id":"hero_banner","type":"SharedSlice","name":"HeroBanner","description":"The Hero Banner is made of a big bold title, a short subtitle, a CTA button, and a hero image.","variations":[{"id":"default","name":"Default","description":"Default variation of the hero banner with title, subtitle, button and image","primary":{"title":{"type":"StructuredText","config":{"label":"Title","single":"heading1","placeholder":"Enter a big bold title"}},"subtitle":{"type":"StructuredText","config":{"label":"Subtitle","single":"paragraph","placeholder":"Enter a short subtitle"}},"button_label":{"type":"Text","config":{"label":"CTA Button Label","placeholder":"Enter button text"}},"button_link":{"type":"Link","config":{"label":"CTA Button Link","placeholder":"Add link for the button","select":"web"}},"hero_image":{"type":"Image","config":{"label":"Hero Image","constraint":{"width":400,"height":400},"thumbnails":[]}}},"items":{},"docURL":"...","version":"initial","imageUrl":""},{"id":"withoutImage","name":"Without Image","description":"Default variation of the hero banner with title, subtitle, button and image","primary":{"title":{"type":"StructuredText","config":{"label":"Title","single":"heading1","placeholder":"Enter a big bold title"}},"subtitle":{"type":"StructuredText","config":{"label":"Subtitle","single":"paragraph","placeholder":"Enter a short subtitle"}},"button_label":{"type":"Text","config":{"label":"CTA Button Label","placeholder":"Enter button text"}},"button_link":{"type":"Link","config":{"label":"CTA Button Link","placeholder":"Add link for the button","select":"web"}}},"items":{},"docURL":"...","version":"initial","imageUrl":""}]}
+{
+    "id": "hero_banner",
+    "type": "SharedSlice",
+    "name": "HeroBanner",
+    "description": "The Hero Banner is made of a big bold title, a short subtitle, a CTA button, and a hero image.",
+    "variations": [
+        {
+            "id": "default",
+            "name": "Default",
+            "description": "Default variation of the hero banner with title, subtitle, button and image",
+            "primary": {
+                "title": {
+                    "type": "StructuredText",
+                    "config": {
+                        "label": "Title",
+                        "single": "heading1",
+                        "placeholder": "Enter a big bold title"
+                    }
+                },
+                "subtitle": {
+                    "type": "StructuredText",
+                    "config": {
+                        "label": "Subtitle",
+                        "single": "paragraph",
+                        "placeholder": "Enter a short subtitle"
+                    }
+                },
+                "button_label": {
+                    "type": "Text",
+                    "config": {
+                        "label": "CTA Button Label",
+                        "placeholder": "Enter button text"
+                    }
+                },
+                "button_link": {
+                    "type": "Link",
+                    "config": {
+                        "label": "CTA Button Link",
+                        "placeholder": "Add link for the button",
+                        "select": null
+                    }
+                },
+                "hero_image": {
+                    "type": "Image",
+                    "config": {
+                        "label": "Hero Image",
+                        "constraint": {
+                            "width": 400,
+                            "height": 400
+                        },
+                        "thumbnails": []
+                    }
+                }
+            },
+            "items": {},
+            "docURL": "...",
+            "version": "initial",
+            "imageUrl": ""
+        },
+        {
+            "id": "withoutImage",
+            "name": "Without Image",
+            "description": "Default variation of the hero banner with title, subtitle, button and image",
+            "primary": {
+                "title": {
+                    "type": "StructuredText",
+                    "config": {
+                        "label": "Title",
+                        "single": "heading1",
+                        "placeholder": "Enter a big bold title"
+                    }
+                },
+                "subtitle": {
+                    "type": "StructuredText",
+                    "config": {
+                        "label": "Subtitle",
+                        "single": "paragraph",
+                        "placeholder": "Enter a short subtitle"
+                    }
+                },
+                "button_label": {
+                    "type": "Text",
+                    "config": {
+                        "label": "CTA Button Label",
+                        "placeholder": "Enter button text"
+                    }
+                },
+                "button_link": {
+                    "type": "Link",
+                    "config": {
+                        "label": "CTA Button Link",
+                        "placeholder": "Add link for the button",
+                        "select": null
+                    }
+                }
+            },
+            "items": {},
+            "docURL": "...",
+            "version": "initial",
+            "imageUrl": ""
+        }
+    ]
+}

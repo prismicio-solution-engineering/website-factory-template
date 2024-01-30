@@ -29,6 +29,9 @@ async function init() {
   const assetComparisonTable = extractedImages.map(extractedImage => ({ olDid: extractedImage.id, url: extractedImage.url.replace("?auto=format,compress", "").replace("?auto=compress,format", ""), fileName: extractedImage.url.includes("images.unsplash.com") ? path.basename(extractedImage.url.split('?')[0]) + ".webp" : removePrefix(extractedImage.url.split('?')[0]), newId: "" }))
   console.log(assetComparisonTable)
 
+  //Prepare doc comparison table
+  const docComparisonTable = docs.map(doc => ({ olDid: doc.id, newId: "" }))
+
   // Construct the Prismic Write request URLs
   const migrationUrl = `https://migration.prismic.io/documents`;
   const assetUrl = `https://asset-api.prismic.io/assets`;
@@ -146,7 +149,6 @@ async function init() {
 
   //Replace assetIDs in all docs (need to add support for RichText links)
   const mutateDocs = () => {
-    const mutatedDocuments = []
 
     docs.forEach(document => {
       if (document && document.data) {
@@ -173,16 +175,14 @@ async function init() {
         //add migration release
         document.releaseId = "migration"
       }
-      mutatedDocuments.push(document)
     });
-
-    return mutatedDocuments;
   }
 
   // Push updated docs to target repository
   const pushUpdatedDocs = async () => {
     console.log(docs)
-    docs.forEach(async (doc) => {
+    for (let i = 0; i < docs.length; i++) {
+      const doc = docs[i]
       // Send the update
       const response = await fetch(migrationUrl, {
         headers: {
@@ -197,10 +197,78 @@ async function init() {
 
       await delay(2000);
       console.log(response);
-      console.log(await response.json());
-    })
+      const newDoc = await response.json();
+      docComparisonTable[i].newId = newDoc.id
+    }
   }
 
+  //Replace old linkId with new linkId in image field
+  function editIdFromLink(obj) {
+    for (const key in obj) {
+      const item = obj[key];
+      if (item && item.id && item.isBroken !== undefined) {
+        console.log(obj[key])
+        obj[key].id = docComparisonTable.find(doc => doc.olDid === item.id).newId
+        console.log(obj[key])
+      }
+    }
+    return obj
+  }
+
+  //Replace assetIDs in all docs (need to add support for RichText links)
+  const mutateDocsWithLinks = () => {
+
+    docs.forEach(document => {
+      if (document && document.data) {
+        // Extract from direct data properties
+        document.data = editIdFromLink(document.data);
+        document.id = docComparisonTable.find(doc => doc.olDid === document.id).newId
+
+        // Extract from slices if available
+        if (document.data.slices) {
+          for (let i = 0; i < document.data.slices.length; i++) {
+            // Extract from primary object
+            if (document.data.slices[i].primary) {
+              document.data.slices[i].primary = editIdFromLink(document.data.slices[i].primary);
+            }
+            // Extract from each item in items array
+            if (document.data.slices[i].items && document.data.slices[i].items.length > 0) {
+              for (let j = 0; j < document.data.slices[i].items.length; j++) {
+                document.data.slices[i].items[j] = editIdFromLink(document.data.slices[i].items[j]);
+              }
+            }
+          }
+        }
+        //add a title to doc
+        document.title = document.uid ? document.type + " " + document.uid : document.type
+        //add migration release
+        document.releaseId = "migration"
+      }
+    });
+  }
+
+  // Push updated docs to target repository
+  const pushUpdatedDocsWithLinks = async () => {
+    console.log(docs)
+    for (let i = 0; i < docs.length; i++) {
+      const doc = docs[i]
+      // Send the update
+      const response = await fetch(migrationUrl + "/" + doc.id, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'x-api-key': apiKey,
+          'Content-Type': 'application/json',
+          'repository': instanceRepository,
+        },
+        method: 'PUT',
+        body: JSON.stringify(doc),
+      });
+
+      await delay(2000);
+      console.log(response);
+      console.log(await response.json());
+    }
+  }
 
   try {
     await downloadFiles();
@@ -210,6 +278,9 @@ async function init() {
     console.log(assetComparisonTable)
     mutateDocs()
     await pushUpdatedDocs()
+    console.log(docComparisonTable)
+    mutateDocsWithLinks()
+    await pushUpdatedDocsWithLinks()
   } catch (err) {
     console.error('An error occurred:', err);
   }
