@@ -5,12 +5,13 @@ import path from 'path';
 import fs from 'fs-extra'
 import axios from 'axios'
 import FormData from 'form-data'
+import config from '../slicemachine.config.json' assert { type: 'json' }
 
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 async function init() {
   const templateRepository = 'website-factory-template';
-  const instanceRepository = 'website-factory-instance-1' // target repositoryName;
+  const instanceRepository = process.env.TARGET_REPO || config.repositoryName // target repositoryName;
   const apiKey = process.env.CMSRP_API_KEY;
   const email = process.env.CMSRP_EMAIL;
   const password = process.env.CMSRP_PWD;
@@ -26,7 +27,16 @@ async function init() {
   console.log(extractedImages)
 
   //Prepare asset comparison table (includes unsplash support)
-  const assetComparisonTable = extractedImages.map(extractedImage => ({ olDid: extractedImage.id, url: extractedImage.url.replace("?auto=format,compress", "").replace("?auto=compress,format", ""), fileName: extractedImage.url.includes("images.unsplash.com") ? path.basename(extractedImage.url.split('?')[0]) + ".webp" : removePrefix(extractedImage.url.split('?')[0]), newId: "" }))
+  let imageFileNames = []
+  const assetComparisonTable = extractedImages.map(extractedImage => {
+    const extractedFileName = extractedImage.url.includes("images.unsplash.com") ? path.basename(extractedImage.url.split('?')[0]) + ".webp" : removePrefix(extractedImage.url.split('?')[0])
+    // If already an image with that fileName then don't remove GUID
+    if (imageFileNames.find(fileName => fileName === extractedFileName)) {
+      return { olDid: extractedImage.id, url: extractedImage.url.replace("?auto=format,compress", "").replace("?auto=compress,format", ""), fileName: extractedImage.url.includes("images.unsplash.com") ? path.basename(extractedImage.url.split('?')[0]) + ".webp" : extractedImage.url.split('?')[0], newId: "" }
+    }
+    imageFileNames.push(extractedFileName)
+    return { olDid: extractedImage.id, url: extractedImage.url.replace("?auto=format,compress", "").replace("?auto=compress,format", ""), fileName: extractedImage.url.includes("images.unsplash.com") ? path.basename(extractedImage.url.split('?')[0]) + ".webp" : removePrefix(extractedImage.url.split('?')[0]), newId: "" }
+  })
   console.log(assetComparisonTable)
 
   //Prepare doc comparison table
@@ -106,7 +116,6 @@ async function init() {
       for (let i = 0; i < assetComparisonTable.length; i++) {
         const filePath = path.join(folderPath, assetComparisonTable[i].fileName);
         const uploadResponse = await uploadFile(filePath);
-        console.log(uploadResponse.data);
         assetComparisonTable[i].newId = uploadResponse.data.id
       }
     } catch (err) {
@@ -138,16 +147,22 @@ async function init() {
     for (const key in obj) {
       const item = obj[key];
       if (item && item.alt !== undefined) {
-        console.log(obj[key])
         obj[key].id = assetComparisonTable.find(asset => asset.olDid === item.id).newId
         delete obj[key].url
-        console.log(obj[key])
+      }
+      if (isFilledRichText(item)) {
+        for (let i = 0; i < item.length; i++) {
+          const richtextItem = item[i];
+          if (richtextItem.type === 'image' && richtextItem.url !== undefined && richtextItem.id !== undefined) {
+            obj[key][i].id = assetComparisonTable.find(asset => asset.olDid === richtextItem.id).newId
+          }
+        }
       }
     }
     return obj
   }
 
-  //Replace assetIDs in all docs (need to add support for RichText links)
+  //Replace assetIDs in all docs
   const mutateDocs = () => {
 
     docs.forEach(document => {
@@ -180,9 +195,9 @@ async function init() {
 
   // Push updated docs to target repository
   const pushUpdatedDocs = async () => {
-    console.log(docs)
     for (let i = 0; i < docs.length; i++) {
       const doc = docs[i]
+      console.log(doc)
       // Send the update
       const response = await fetch(migrationUrl, {
         headers: {
@@ -196,20 +211,31 @@ async function init() {
       });
 
       await delay(2000);
-      console.log(response);
       const newDoc = await response.json();
+      console.log(newDoc)
       docComparisonTable[i].newId = newDoc.id
     }
   }
 
-  //Replace old linkId with new linkId in image field
+  //Replace old linkId with new linkId in link field
   function editIdFromLink(obj) {
     for (const key in obj) {
       const item = obj[key];
       if (item && item.id && item.isBroken !== undefined) {
-        console.log(obj[key])
         obj[key].id = docComparisonTable.find(doc => doc.olDid === item.id).newId
-        console.log(obj[key])
+      }
+      if (isFilledRichText(item)) {
+        for (let i = 0; i < item.length; i++) {
+          const richtextItem = item[i];
+          if (richtextItem.spans !== undefined && richtextItem.spans.length > 0) {
+            for (let j = 0; j < richtextItem.spans.length; j++) {
+              if (richtextItem.spans[j] !== undefined && richtextItem.spans[j].type === "hyperlink" && richtextItem.spans[j].data !== undefined && richtextItem.spans[j].data.id !== undefined) {
+                console.log(richtextItem.spans[j].data.id)
+                obj[key][i].spans[j].data.id = docComparisonTable.find(doc => doc.olDid === richtextItem.spans[j].data.id).newId
+              }
+            }
+          }
+        }
       }
     }
     return obj
@@ -220,9 +246,12 @@ async function init() {
 
     docs.forEach(document => {
       if (document && document.data) {
+        // Set New id
+        // richtext example https://github.com/prismicio-solution-engineering/sm-migration-scripts/blob/master/migrate-links.mjs
+        document.id = docComparisonTable.find(doc => doc.olDid === document.id).newId
+
         // Extract from direct data properties
         document.data = editIdFromLink(document.data);
-        document.id = docComparisonTable.find(doc => doc.olDid === document.id).newId
 
         // Extract from slices if available
         if (document.data.slices) {
@@ -249,7 +278,6 @@ async function init() {
 
   // Push updated docs to target repository
   const pushUpdatedDocsWithLinks = async () => {
-    console.log(docs)
     for (let i = 0; i < docs.length; i++) {
       const doc = docs[i]
       // Send the update
@@ -265,21 +293,22 @@ async function init() {
       });
 
       await delay(2000);
-      console.log(response);
-      console.log(await response.json());
     }
   }
 
   try {
+    //Main execution stack
     await downloadFiles();
     console.log('All files have been downloaded');
     await processFiles();
     await deleteDirectory();
     console.log(assetComparisonTable)
     mutateDocs()
+    console.log(docs)
     await pushUpdatedDocs()
     console.log(docComparisonTable)
     mutateDocsWithLinks()
+    console.log(docs)
     await pushUpdatedDocsWithLinks()
   } catch (err) {
     console.error('An error occurred:', err);
@@ -333,18 +362,54 @@ function extractFromObject(obj, imageUrls) {
   for (const key in obj) {
     const item = obj[key];
     if (item && item.alt !== undefined) {
-      imageUrls.push({ id: item.id, url: item.url });
+      if (!imageUrls.find(image => image.id === item.id)) {
+        imageUrls.push({ id: item.id, url: item.url });
+      }
+    }
+    if (isFilledRichText(item)) {
+      for (let i = 0; i < item.length; i++) {
+        const richtextItem = item[i];
+        if (richtextItem.type === 'image' && richtextItem.url !== undefined && richtextItem.id !== undefined) {
+          if (!imageUrls.find(image => image.id === richtextItem.id)) {
+            imageUrls.push({ id: richtextItem.id, url: richtextItem.url });
+          }
+        }
+      }
     }
   }
 }
 
 // Remove GUID to get asset fileName
-function removePrefix(fileName) {
+function removePrefix(fileName, assetComparisonTable) {
   // Split the string into an array using '_' as the separator
   const parts = fileName.split('_');
-
   // Slice the array from the second element onwards and join it back into a string
   return parts.slice(1).join('_');
+}
+
+//Check if field is a Rich Text
+function isFilledRichText(field) {
+  if (
+    Array.isArray(field) &&
+    field.length > 0 &&
+    (
+      field[0].type === "paragraph" ||
+      field[0].type === "heading1" ||
+      field[0].type === "heading2" ||
+      field[0].type === "heading3" ||
+      field[0].type === "heading4" ||
+      field[0].type === "heading5" ||
+      field[0].type === "heading6" ||
+      field[0].type === "list-item" ||
+      field[0].type === "o-list-item" ||
+      field[0].type === "embed" ||
+      field[0].type === "preformatted" ||
+      field[0].type === "image"
+    )
+  ) {
+    return true;
+  }
+  return false;
 }
 
 init();
