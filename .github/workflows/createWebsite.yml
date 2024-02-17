@@ -12,16 +12,13 @@ jobs:
       - run: echo "💡 The ${{ github.repository }} repository has been cloned to the runner."
       - run: echo "🖥️ The workflow is now ready to test your code on the runner."
       - name: Install packages
-        run:|
-          npm install
+        run: npm install
       - name: Login through script
         env: # Set the secret as an input
           CMSRP_EMAIL: ${{ secrets.CMSRP_EMAIL }}
           CMSRP_PWD: ${{ secrets.CMSRP_PWD }}
-        run:|
-          node --loader ts-node/esm utils/login.mts
+        run: node --loader ts-node/esm utils/login.mts
       - name: Run @slicemachine/init to push models
-        run:|
-          npx @slicemachine/init@latest -r website-factory-instance-alpha
+        run: npx @slicemachine/init@latest -r website-factory-instance-alpha
           
       - run: echo "🍏 This job's status is ${{ job.status }}."
