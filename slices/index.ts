@@ -2,8 +2,8 @@
 
 import dynamic from "next/dynamic";
 
-export const components = {  
-    hero_banner: dynamic(() => import("./HeroBanner")),
+export const components = {
+  hero_banner: dynamic(() => import("./HeroBanner")),
   team_section: dynamic(() => import("./TeamSection")),
   testimonials_section: dynamic(() => import("./TestimonialsSection")),
 };
