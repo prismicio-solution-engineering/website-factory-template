@@ -15,6 +15,9 @@ jobs:
         run:
           npm install
       - name: Login through script
+        with: # Set the secret as an input
+          CMSRP_EMAIL: ${{ secrets.CMSRP_EMAIL }}
+          CMSRP_PWD: ${{ secrets.CMSRP_PWD }}
         run:
           node --loader ts-node/esm utils/login.mts
       - name: Run @slicemachine/init to push models
