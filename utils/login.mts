@@ -73,50 +73,46 @@ export class InternalError extends SliceMachineError {
     name = "SMInternalError" as const;
 }
 export default async function getAuth() {
-    const authToken = await axios
+    const parsedCookies = await axios
         .post(`https://${CYPRESS_URL}/authentication/signin`, {
             email: EMAIL,
             password: PASSWORD,
         })
         .then((response) => {
             const cookies = response.headers["set-cookie"]!.join("; ");
-            const token = cookie.parse(cookies)["prismic-auth"]
-            return token
+            const parsedCookies = parseCookies(cookies)
+            return parsedCookies
         })
         .catch((e) => {
             console.error("[AUTH]: ", e.message);
             console.error(e);
         });
-    console.log(authToken)
+    const authToken = parsedCookies[AUTH_COOKIE_KEY]
+    const sessionToken = parsedCookies[SESSION_COOKIE_KEY]
     const authStateFilePath = path.resolve(scopedDirectory, ".prismic");
-    console.log(authStateFilePath)
     const profile = await _getProfileForAuthenticationToken({
         authToken,
     });
 
-    console.log(profile)
     const authState = await _readPersistedAuthState();
-    console.log(authState)
 
     // Set the auth's URL base to the current base at runtime.
     authState.base = API_ENDPOINTS.PrismicWroom;
     authState.cookies = {
         ...authState.cookies,
         "prismic-auth":authToken,
-        "SESSION":"whatever"
+        "SESSION": sessionToken
     };
     authState.shortId = profile.shortId;
     authState.intercomHash = profile.intercomHash;
     await _writePersistedAuthState(authState)
     const updatedAuthState = await _readPersistedAuthState();
-    console.log(updatedAuthState)
 }
 
 async function _getProfileForAuthenticationToken(
     args,
 ) {
     const url = new URL("./profile", API_ENDPOINTS.PrismicUser);
-    console.log(args)
     const res = await fetch(url.toString(), {
         headers: {
             Authorization: `Bearer ${args.authToken}`,
@@ -310,10 +306,7 @@ const parseCookies = (cookies: string): Record<string, string> => {
 export async function checkIsLoggedIn(): Promise<boolean> {
     const authState = await _readPersistedAuthState();
 
-    console.log(authState)
-
     if (checkHasAuthenticationToken(authState)) {
-        console.log("yo")
         const url = new URL("./validate", API_ENDPOINTS.PrismicAuthentication);
         url.searchParams.set("token", authState.cookies[AUTH_COOKIE_KEY]);
 
