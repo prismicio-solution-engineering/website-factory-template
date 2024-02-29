@@ -18,13 +18,20 @@ jobs:
           CMSRP_EMAIL: ${{ secrets.CMSRP_EMAIL }}
           CMSRP_PWD: ${{ secrets.CMSRP_PWD }}
         run: node --loader ts-node/esm utils/login.mts
+      - name: Extract repo name from ${{ github.repository }}
+        id: extract_repo
+        run: |
+          REPO_NAME="${{ github.repository }}"
+          FORMATTED_REPO_NAME="${REPO_NAME#*/}"
+          echo "Extracted repo name: $FORMATTED_REPO_NAME"
+          echo "FORMATTED_REPO_NAME=$FORMATTED_REPO_NAME" >> $GITHUB_ENV
       - name: Run @slicemachine/init to push models
-        run: npx @slicemachine/init@latest -r ${{ secrets.TARGET_REPO }}
+        run: npx @slicemachine/init@latest -r $FORMATTED_REPO_NAME
       - name: Run initContent to push content
         env: # Set the secret as an input
           CMSRP_EMAIL: ${{ secrets.CMSRP_EMAIL }}
           CMSRP_PWD: ${{ secrets.CMSRP_PWD }}
-          TARGET_REPO: ${{ secrets.TARGET_REPO }}
+          TARGET_REPO: $FORMATTED_REPO_NAME
           CMSRP_API_KEY: ${{ secrets.CMSRP_API_KEY }}
         run: node --loader ts-node/esm utils/initContent.mts
           
