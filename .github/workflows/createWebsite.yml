@@ -31,7 +31,7 @@ jobs:
         env: # Set the secret as an input
           CMSRP_EMAIL: ${{ secrets.CMSRP_EMAIL }}
           CMSRP_PWD: ${{ secrets.CMSRP_PWD }}
-          TARGET_REPO: $FORMATTED_REPO_NAME
+          TARGET_REPO: ${{ env.FORMATTED_REPO_NAME }}
           CMSRP_API_KEY: ${{ secrets.CMSRP_API_KEY }}
         run: node --loader ts-node/esm utils/initContent.mts
           
