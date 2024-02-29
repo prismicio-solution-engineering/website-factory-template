@@ -9,7 +9,7 @@ import { AllDocumentTypes } from '../prismicio-types.js';
 import { createClient, AnyRegularField, GroupField, SliceZone, isFilled, RTNode, FilledLinkToMediaField, PrismicDocument } from '@prismicio/client';
 
 const templateRepository = 'website-factory-template';
-const instanceRepository = process.env.TARGET_REPO //|| config.repositoryName // target repositoryName;
+const instanceRepository = process.env.TARGET_REPO ? process.env.TARGET_REPO : "website-factory-instance-alpha" //|| config.repositoryName // target repositoryName;
 const apiKey = process.env.CMSRP_API_KEY;
 const email = process.env.CMSRP_EMAIL;
 const password = process.env.CMSRP_PWD;

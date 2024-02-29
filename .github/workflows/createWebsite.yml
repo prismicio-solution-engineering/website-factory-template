@@ -19,6 +19,13 @@ jobs:
           CMSRP_PWD: ${{ secrets.CMSRP_PWD }}
         run: node --loader ts-node/esm utils/login.mts
       - name: Run @slicemachine/init to push models
-        run: npx @slicemachine/init@latest -r website-factory-instance-alpha
+        run: npx @slicemachine/init@latest -r ${{ secrets.TARGET_REPO }}
+      - name: Run initContent to push content
+        env: # Set the secret as an input
+          CMSRP_EMAIL: ${{ secrets.CMSRP_EMAIL }}
+          CMSRP_PWD: ${{ secrets.CMSRP_PWD }}
+          TARGET_REPO: ${{ secrets.TARGET_REPO }}
+          CMSRP_API_KEY: ${{ secrets.CMSRP_API_KEY }}
+        run: node --loader ts-node/esm utils/initContent.mts
           
       - run: echo "🍏 This job's status is ${{ job.status }}."
