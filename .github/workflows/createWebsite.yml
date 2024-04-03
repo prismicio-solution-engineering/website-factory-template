@@ -1,6 +1,4 @@
 name: Create website on github repo creation
-env:
-  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
 on: workflow_dispatch
 jobs:
   Create-Prismic-Repo-And-Push-Data-Models:
