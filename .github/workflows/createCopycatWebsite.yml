@@ -32,5 +32,5 @@ jobs:
       - name: Deploy website on vercel
         env: # Set the secret as an input
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-        run: vercel --scope prismic-solution-engineering --token=${{ secrets.VERCEL_TOKEN }} --prod --no-wait --build-env NEXT_PUBLIC_PRISMIC_ENVIRONMENT=${{ inputs.website_name }} --env NEXT_PUBLIC_PRISMIC_ENVIRONMENT=${{ inputs.website_name }} --yes
+        run: vercel --scope prismic-solution-engineering --token=${{ secrets.VERCEL_TOKEN }} --prod --build-env NEXT_PUBLIC_PRISMIC_ENVIRONMENT=${{ inputs.website_name }} --env NEXT_PUBLIC_PRISMIC_ENVIRONMENT=${{ inputs.website_name }} --name=${{ inputs.website_name }} --yes #--no-wait 
       - run: echo "🍏 This job's status is ${{ job.status }}."
